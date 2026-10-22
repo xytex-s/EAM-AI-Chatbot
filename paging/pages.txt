@@ -1,0 +1,34 @@
+# Group 7 chatbot - pages to collect (one URL per line; lines starting with # are ignored)
+# Starter list: real shu.ac.uk pages found by search on 22 Oct 2026. Open each one to check it
+# is current and useful before relying on it. Expand to 50-150 using find_pages.py.
+# robots.txt (checked 22 Oct 2026) blocks /campaigns/ and a few admin pages - none of these.
+
+# Help and support
+https://www.shu.ac.uk/myhallam/help-and-support
+https://www.shu.ac.uk/myhallam/help-and-support/student-support-advisers
+https://www.shu.ac.uk/welcome/prepare/how-to-access-support
+
+# Wellbeing
+https://www.shu.ac.uk/welcome/prepare/support-and-wellbeing
+https://www.shu.ac.uk/wellbeing/register-for-support
+
+# Disability
+https://www.shu.ac.uk/disabled-student-support
+
+# Accommodation
+https://www.shu.ac.uk/study-here/accommodation/find-accommodation
+
+# Fees and funding
+https://www.shu.ac.uk/study-here/fees-and-funding/payment-dates
+https://www.shu.ac.uk/funding/financial-difficulties/hallam-hardship-fund
+https://www.shu.ac.uk/funding/money-skills/budgeting
+https://www.shu.ac.uk/funding/scholarships-and-bursaries/final-year-bursary
+
+# IT and library
+https://www.shu.ac.uk/myhallam/it-and-library/it-services
+https://libguides.shu.ac.uk/help
+
+# Enrolment and SHUcard
+https://www.shu.ac.uk/welcome
+https://www.shu.ac.uk/welcome/enrol/shucard
+https://www.shu.ac.uk/shucard

@@ -1,0 +1,101 @@
+{
+  "_about": "Draft /ask API contract for Group 7 chatbot (Ethan <-> Ahmed, agree by 24 Oct). Example data only: URLs, places and the wellbeing wording are placeholders, not real SHU content.",
+
+  "request": {
+    "method": "POST",
+    "path": "/ask",
+    "headers": { "Content-Type": "application/json" },
+    "body": { "question": "How do I reset my university password?" },
+    "rules": "question must be a non-empty string, max 500 characters"
+  },
+
+  "responses": {
+    "answered": {
+      "status": 200,
+      "body": {
+        "answer": "Plain-English answer written only from the saved SHU pages.",
+        "sources": [
+          { "title": "Example SHU page title", "url": "https://www.shu.ac.uk/example-page" }
+        ],
+        "places": [],
+        "safety": false,
+        "time_ms": 4200
+      }
+    },
+
+    "not_in_pages": {
+      "status": 200,
+      "body": {
+        "answer": "I couldn't find that in the SHU pages I have. Try contacting Student Support directly.",
+        "sources": [],
+        "places": [],
+        "safety": false,
+        "time_ms": 3100
+      }
+    },
+
+    "local_places": {
+      "status": 200,
+      "body": {
+        "answer": "Here are some places near City Campus.",
+        "sources": [],
+        "places": [
+          {
+            "name": "Example Cafe",
+            "type": "cafe",
+            "distance_m": 250,
+            "map_url": "https://www.openstreetmap.org/node/0"
+          },
+          {
+            "name": "Example Restaurant",
+            "type": "restaurant",
+            "distance_m": 400,
+            "map_url": "https://www.openstreetmap.org/node/0"
+          }
+        ],
+        "safety": false,
+        "time_ms": 900
+      }
+    },
+
+    "safety_triggered": {
+      "status": 200,
+      "body": {
+        "answer": "[Fixed wellbeing message - wording to be copied from the SHU wellbeing page, Ahmed to confirm]",
+        "sources": [],
+        "places": [],
+        "safety": true,
+        "time_ms": 5
+      }
+    },
+
+    "bad_request": {
+      "status": 400,
+      "body": { "error": "Please enter a question (max 500 characters)." }
+    },
+
+    "rate_limited": {
+      "status": 429,
+      "body": "Returned by Nginx, not Flask - may be HTML, so the page should show a generic 'too many requests, try again shortly' message."
+    },
+
+    "server_error": {
+      "status": 500,
+      "body": { "error": "Something went wrong. Please try again." }
+    }
+  },
+
+  "field_notes": {
+    "answer": "string - always present on 200. Insert with textContent, not innerHTML.",
+    "sources": "list of {title, url} - empty when unanswered, a places question, or safety triggered",
+    "places": "list of {name, type, distance_m, map_url} - empty unless the question is about local food/coffee/shops",
+    "safety": "bool - true means the model was skipped and answer is the fixed wellbeing message; the page may want to style it differently",
+    "time_ms": "int - server-side time, logged for the test spreadsheet"
+  },
+
+  "safety_and_places_functions": {
+    "safety.py": "check(question: str) -> str | None  (returns the fixed message if triggered, else None)",
+    "places.py": "lookup(question: str) -> list[dict] | None  (returns places for local questions, else None)",
+    "note": "Proposed signatures - Ahmed to confirm. /ask calls safety first and returns immediately if it triggers."
+  }
+}

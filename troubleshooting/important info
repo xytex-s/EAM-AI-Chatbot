@@ -1,0 +1,2 @@
+no clipboard in the VM, fixed with SSH via port forwarding
+the first speed test was too slow, fixed by shortening the prompt

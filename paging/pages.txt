@@ -1,34 +1,191 @@
 # Group 7 chatbot - pages to collect (one URL per line; lines starting with # are ignored)
-# Starter list: real shu.ac.uk pages found by search on 22 Oct 2026. Open each one to check it
-# is current and useful before relying on it. Expand to 50-150 using find_pages.py.
-# robots.txt (checked 22 Oct 2026) blocks /campaigns/ and a few admin pages - none of these.
+# Trimmed on 23 Oct 2026 from 606 candidates (find_pages.py) to ~150 pages that answer
+# common student questions. robots.txt checked: none of these are blocked.
+#
+# Left out on purpose: deep policy annexes, staff and chaplain profiles, admissions/DBS checks,
+# marking and moderation policy, individual scholarships and halls, per-device Wi-Fi guides,
+# dated welcome-week pages, and the Hallam Helper pages (the chatbot we are comparing against).
 
-# Help and support
+# ---------- Help and support ----------
 https://www.shu.ac.uk/myhallam/help-and-support
 https://www.shu.ac.uk/myhallam/help-and-support/student-support-advisers
+https://www.shu.ac.uk/myhallam/help-and-support/academic-advisers
+https://www.shu.ac.uk/myhallam/support-at-hallam
+https://www.shu.ac.uk/myhallam/support-at-hallam/su-student-advice-centre
+https://www.shu.ac.uk/myhallam/help-in-an-emergency
+https://www.shu.ac.uk/myhallam/cost-of-living-support-for-students
+https://www.shu.ac.uk/myhallam/key-dates
+https://www.shu.ac.uk/myhallam/final-year
+https://www.shu.ac.uk/myhallam/careers-and-development
 https://www.shu.ac.uk/welcome/prepare/how-to-access-support
 
-# Wellbeing
-https://www.shu.ac.uk/welcome/prepare/support-and-wellbeing
-https://www.shu.ac.uk/wellbeing/register-for-support
-
-# Disability
-https://www.shu.ac.uk/disabled-student-support
-
-# Accommodation
-https://www.shu.ac.uk/study-here/accommodation/find-accommodation
-
-# Fees and funding
-https://www.shu.ac.uk/study-here/fees-and-funding/payment-dates
-https://www.shu.ac.uk/funding/financial-difficulties/hallam-hardship-fund
-https://www.shu.ac.uk/funding/money-skills/budgeting
-https://www.shu.ac.uk/funding/scholarships-and-bursaries/final-year-bursary
-
-# IT and library
+# ---------- IT and library ----------
+https://www.shu.ac.uk/myhallam/it-and-library
 https://www.shu.ac.uk/myhallam/it-and-library/it-services
+https://www.shu.ac.uk/myhallam/it-and-library/it-help
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/my-it-account
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/my-it-account/can-i-access-blackboard-my-homedrive-emails-and-other-services-from-home
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/my-it-account/where-is-the-best-place-to-save-my-work
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/email
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/email/online-fraud-and-phishing-emails
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/wifi
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/wifi/eduroam
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/print-copy-scan
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/print-copy-scan/where-are-printers-and-photocopiers
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/print-copy-scan/papercut-refunds
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/hardware/laptop-loans
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/software
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/software/appsanywhere
+https://www.shu.ac.uk/myhallam/it-and-library/it-help/software/free-and-discounted-software
+https://www.shu.ac.uk/myhallam/it-and-library/mytimetable
 https://libguides.shu.ac.uk/help
 
-# Enrolment and SHUcard
-https://www.shu.ac.uk/welcome
+# ---------- Study and assessment ----------
+https://www.shu.ac.uk/myhallam/study
+https://www.shu.ac.uk/myhallam/study/your-timetable
+https://www.shu.ac.uk/myhallam/study/book-a-room-or-learning-space
+https://www.shu.ac.uk/myhallam/study/assessment
+https://www.shu.ac.uk/myhallam/study/assessment/assessment-information/submitting-your-work
+https://www.shu.ac.uk/myhallam/study/assessment/assessment-information/assignment-guidance
+https://www.shu.ac.uk/myhallam/study/assessment/artificial-intelligence-and-assessment
+https://www.shu.ac.uk/myhallam/study/assessment/academic-conduct
+https://www.shu.ac.uk/myhallam/study/assessment/academic-conduct/types-of-misconduct/plagiarism
+https://www.shu.ac.uk/myhallam/study/assessment/assessment-support/academic-support
+https://www.shu.ac.uk/myhallam/study/assessment/marks-and-feedback
+https://www.shu.ac.uk/myhallam/study/assessment/marks-and-feedback/results
+https://www.shu.ac.uk/myhallam/study/assessment/marks-and-feedback/progression
+https://www.shu.ac.uk/myhallam/study/student-examination-guidance
+https://www.shu.ac.uk/myhallam/study/student-examination-guidance/frequently-asked-questions
+https://www.shu.ac.uk/myhallam/study/student-examination-guidance/what-can-i-take-into-my-exams
+https://www.shu.ac.uk/myhallam/study/break-in-study
+https://www.shu.ac.uk/myhallam/study/break-in-study/request-a-break
+
+# ---------- Extensions, rules, appeals and complaints ----------
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/extenuation-and-extensions
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/extenuation-and-extensions/extensions-and-exceptional-circumstances-policy/extensions
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/extenuation-and-extensions/extensions-and-exceptional-circumstances-policy/exceptional-circumstances
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/extenuation-and-extensions/evidence-to-support-extensions-and-exceptional-circumstances-requests
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/standard-assessment-regulations/regulation-9---late-submission
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/standard-assessment-regulations/regulation-5---failure-of-a-module
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/standard-assessment-regulations/regulation-8---repeating-a-module
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/assessment-policies-and-regulations/examination-conduct/arrival-at-in-person-examinations
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/appeals-and-complaints
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/appeals-and-complaints/appeals
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/appeals-and-complaints/complaints/student-complaint-procedure
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/student-engagement/withdrawal-policy
+https://www.shu.ac.uk/myhallam/university-life/registering-your-attendance
+https://www.shu.ac.uk/myhallam/university-life/student-handbook
+
+# ---------- Campus life, safety and inclusion ----------
+https://www.shu.ac.uk/myhallam/university-life/staying-safe
+https://www.shu.ac.uk/myhallam/university-life/staying-safe/contact-security
+https://www.shu.ac.uk/myhallam/university-life/staying-safe/personal-safety
+https://www.shu.ac.uk/myhallam/university-life/staying-safe/safety-on-nights-out
+https://www.shu.ac.uk/myhallam/university-life/university-rules-and-regulations/health-safety-and-security/what-to-do-during-a-fire-alarm
+https://www.shu.ac.uk/myhallam/university-life/working-together/student-representatives
+https://www.shu.ac.uk/myhallam/support-at-hallam/multifaith-chaplaincy
+https://www.shu.ac.uk/myhallam/support-at-hallam/multifaith-chaplaincy/somewhere-to-pray
+https://www.shu.ac.uk/myhallam/support-at-hallam/pregnancy-and-maternity-support
+https://www.shu.ac.uk/myhallam/support-at-hallam/priority-groups/support-for-care-leavers
+https://www.shu.ac.uk/myhallam/support-at-hallam/priority-groups/support-for-estranged-students
+https://www.shu.ac.uk/myhallam/support-at-hallam/priority-groups/support-for-student-carers
+https://www.shu.ac.uk/myhallam/support-at-hallam/international-experience/information-for-student-visa-holders
+https://www.shu.ac.uk/welcome/prepare/finding-your-way-around
+
+# ---------- Wellbeing ----------
+https://www.shu.ac.uk/wellbeing
+https://www.shu.ac.uk/welcome/prepare/support-and-wellbeing
+https://www.shu.ac.uk/wellbeing/register-for-support
+https://www.shu.ac.uk/wellbeing/register-for-support/appointments
+https://www.shu.ac.uk/wellbeing/register-for-support/appointments/counselling
+https://www.shu.ac.uk/wellbeing/register-for-support/appointments/wellbeing-appointments
+https://www.shu.ac.uk/wellbeing/register-for-support/appointments/report-and-support
+https://www.shu.ac.uk/wellbeing/self-help
+https://www.shu.ac.uk/wellbeing/self-help/calm-spaces
+https://www.shu.ac.uk/wellbeing/self-help/topics
+https://www.shu.ac.uk/wellbeing/self-help/topics/anxiety
+https://www.shu.ac.uk/wellbeing/self-help/topics/low-mood
+https://www.shu.ac.uk/wellbeing/self-help/topics/stress
+https://www.shu.ac.uk/wellbeing/self-help/topics/sleep
+https://www.shu.ac.uk/wellbeing/self-help/topics/settling-in
+https://www.shu.ac.uk/wellbeing/self-help/topics/study-problems
+https://www.shu.ac.uk/wellbeing/self-help/topics/bereavement
+https://www.shu.ac.uk/wellbeing/self-help/topics/bullying-and-harassment
+https://www.shu.ac.uk/wellbeing/workshops/nhs-sheffield-talking-therapies
+https://www.shu.ac.uk/wellbeing/events/peer-support
+https://www.shu.ac.uk/wellbeing/events/togetherall
+
+# Deliberately NOT given to the model: crisis and safeguarding topics. A small model could
+# summarise these badly (wrong phone numbers, missing warnings), so safety.py catches these
+# questions first and returns the fixed SHU wellbeing message instead. Ahmed: use these pages
+# for that message's wording.
+#   https://www.shu.ac.uk/wellbeing/urgent-help
+#   https://www.shu.ac.uk/wellbeing/urgent-help/report
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/suicide
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/eating-disorders
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/domestic-and-relationship-abuse
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/psychosis
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/drugs-and-alcohol
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/arranged-or-forced-marriage
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/pregnancy/miscarriage
+#   https://www.shu.ac.uk/wellbeing/self-help/topics/pregnancy/termination
+
+# ---------- Disabled student support ----------
+https://www.shu.ac.uk/disabled-student-support
+https://www.shu.ac.uk/disabled-student-support/registration
+https://www.shu.ac.uk/disabled-student-support/registration/after-registering
+https://www.shu.ac.uk/disabled-student-support/disabled-students-allowance
+https://www.shu.ac.uk/disabled-student-support/learning-contracts
+https://www.shu.ac.uk/disabled-student-support/conditions
+https://www.shu.ac.uk/disabled-student-support/conditions/specific-learning-difficulties
+https://www.shu.ac.uk/disabled-student-support/practical-peer-support
+https://www.shu.ac.uk/disabled-student-support/study-ready
+https://www.shu.ac.uk/disabled-student-support/contact
+
+# ---------- Accommodation ----------
+https://www.shu.ac.uk/study-here/accommodation/apply
+https://www.shu.ac.uk/study-here/accommodation/apply/how-to-apply
+https://www.shu.ac.uk/study-here/accommodation/apply/after-youve-applied
+https://www.shu.ac.uk/study-here/accommodation/find-accommodation
+https://www.shu.ac.uk/study-here/accommodation/find-accommodation/private-sector
+https://www.shu.ac.uk/study-here/accommodation/find-accommodation/returning-students
+https://www.shu.ac.uk/study-here/accommodation/properties
+https://www.shu.ac.uk/study-here/accommodation/student-living
+https://www.shu.ac.uk/study-here/accommodation/student-living/before-you-arrive
+https://www.shu.ac.uk/study-here/accommodation/student-living/life-in-student-accommodation
+https://www.shu.ac.uk/study-here/accommodation/support-and-information
+https://www.shu.ac.uk/study-here/accommodation/support-and-information/frequently-asked-questions
+https://www.shu.ac.uk/study-here/accommodation/support-and-information/how-to-pay-your-rent
+https://www.shu.ac.uk/study-here/accommodation/support-and-information/emergency-housing-support
+https://www.shu.ac.uk/study-here/accommodation/support-and-information/disabilities-and-medical-requirements
+https://www.shu.ac.uk/study-here/accommodation/contact-us
+
+# ---------- Fees, funding and money ----------
+https://www.shu.ac.uk/study-here/fees-and-funding/paying-fees
+https://www.shu.ac.uk/study-here/fees-and-funding/payment-dates
+https://www.shu.ac.uk/study-here/fees-and-funding/payment-methods
+https://www.shu.ac.uk/study-here/fees-and-funding/refunds
+https://www.shu.ac.uk/study-here/fees-and-funding/keep-your-money-safe
+https://www.shu.ac.uk/myhallam/support-at-hallam/fee-payments
+https://www.shu.ac.uk/funding/advice-and-guidance
+https://www.shu.ac.uk/funding/financial-difficulties
+https://www.shu.ac.uk/funding/financial-difficulties/hallam-hardship-fund
+https://www.shu.ac.uk/funding/financial-difficulties/emergency-vouchers
+https://www.shu.ac.uk/funding/financial-difficulties/exceptional-support-fund
+https://www.shu.ac.uk/funding/money-skills/budgeting
+https://www.shu.ac.uk/funding/money-skills/fraud-and-scams
+https://www.shu.ac.uk/funding/scholarships-and-bursaries
+https://www.shu.ac.uk/funding/scholarships-and-bursaries/student-success-scholarship
+https://www.shu.ac.uk/welcome/prepare/money-and-banking
+
+# ---------- Enrolment and starting at Hallam ----------
+https://www.shu.ac.uk/welcome/enrol
+https://www.shu.ac.uk/welcome/enrol/enrol-online
+https://www.shu.ac.uk/welcome/enrol/enrol-faqs
+https://www.shu.ac.uk/welcome/enrol/activate
+https://www.shu.ac.uk/welcome/enrol/international
 https://www.shu.ac.uk/welcome/enrol/shucard
 https://www.shu.ac.uk/shucard
+https://www.shu.ac.uk/welcome/prepare/international-arrivals
+https://www.shu.ac.uk/welcome/prepare/when-you-arrive
+https://www.shu.ac.uk/welcome/prepare/preparing-for-study

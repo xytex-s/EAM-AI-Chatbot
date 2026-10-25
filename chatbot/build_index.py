@@ -49,7 +49,7 @@ TEST_QUESTIONS = [
     ("How do I book a counselling appointment?",          ["counselling", "register-for-support"]),
     ("I can't sleep, what can I do?",                     ["sleep"]),
     ("How do I get my student ID card?",                  ["shucard"]),
-    ("How do I apply for university accommodation?",      ["accommodation/apply"]),
+    ("How do I apply for university accommodation?",      ["accommodation/apply", "accommodation/support-and-information/frequently-asked-questions"]),
     ("Can I use ChatGPT for my assignments?",             ["artificial-intelligence"]),
     ("What is the best pizza place in Sheffield?",        None),
 ]

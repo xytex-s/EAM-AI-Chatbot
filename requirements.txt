@@ -1,0 +1,12 @@
+# Group 7 chatbot - Python packages (CPU only).
+# The extra index gives the CPU-only PyTorch build, which avoids ~2 GB of GPU libraries.
+# Pin exact versions with `pip freeze` once everything works on VM 2.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers
+transformers
+accelerate
+requests
+beautifulsoup4
+flask
+gunicorn

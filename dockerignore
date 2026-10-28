@@ -1,0 +1,12 @@
+# Keep the image small and free of local files
+.git
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+chatbot/data
+paging/data/review.txt
+paging/data/report.csv
+paging/pages_candidates.txt
+**/*.xlsx
+**/*.csv

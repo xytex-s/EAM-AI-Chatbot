@@ -6,3 +6,5 @@ Collected 144 SHU pages into 273 chunks (median 287 words); no navigation or coo
 all-MiniLM-L6-v2 only reads 256 tokens and would cut off 216 of our 273 chunks. Switched to multi-qa-MiniLM-L6-cos-v1.
 
 Search test: 11 of 12 right first time, 11 ms per search. Score cut-off rejected because an off-topic question outscored a correct match.
+
+sudo docker run --rm -v hf-models:/models -v ~/results:/results chatbot python rag.py --test

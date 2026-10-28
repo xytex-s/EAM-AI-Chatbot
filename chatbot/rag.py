@@ -15,7 +15,6 @@ Usage:
 Speed settings (try them with --test and compare the summary lines):
     --max-tokens 80     longest answer allowed; every extra word costs time
     --top-k 2           fewer extracts = less for the model to read before answering
-    --int8              8-bit compressed model weights (PyTorch dynamic quantisation): faster, less RAM
     --threads 4         CPU threads PyTorch uses (default: PyTorch's own choice)
 
 The model can also be set with the MODEL_NAME environment variable (used on the VMs:
@@ -90,7 +89,7 @@ class FirstTokenTimer:
 class LanguageModel:
     """Runs the model inside this Python process with PyTorch, on CPU."""
 
-    def __init__(self, model_name, max_tokens=MAX_ANSWER_TOKENS, int8=False, threads=None):
+    def __init__(self, model_name, max_tokens=MAX_ANSWER_TOKENS, threads=None):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
         self.torch, self.max_tokens = torch, max_tokens
@@ -99,10 +98,8 @@ class LanguageModel:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float32)
         self.model.eval()
-        if int8:
-            # Store the big weight matrices as 8-bit numbers instead of 32-bit: a quarter of the
-            # memory to read for every token, which is what limits speed on a CPU.
-            self.model = torch.ao.quantization.quantize_dynamic(self.model, {torch.nn.Linear}, dtype=torch.qint8)
+        # Not used: PyTorch dynamic int8 quantisation (quantize_dynamic) made Qwen2.5-1.5B 4-5x faster
+        # at writing but its answers became nonsense in testing (28 Oct), so the model stays float32.
 
     def generate(self, messages):
         """Return (text, cut_off, timing) for one prompt."""
@@ -136,21 +133,21 @@ class RAG:
     """Loads the index, the embedding model and the language model once (slow),
     then answers any number of questions (fast)."""
 
-    def __init__(self, model=None, top_k=TOP_K, max_tokens=MAX_ANSWER_TOKENS, int8=False, threads=None,
+    def __init__(self, model=None, top_k=TOP_K, max_tokens=MAX_ANSWER_TOKENS, threads=None,
                  index_path=DEFAULT_INDEX):
         self.model_name = model or os.environ.get("MODEL_NAME") or DEFAULT_MODEL
-        self.top_k, self.max_tokens, self.int8 = top_k, max_tokens, int8
+        self.top_k, self.max_tokens = top_k, max_tokens
         t0 = time.perf_counter()
         self.index = load_index(index_path)
         self.embedder = load_model(self.index["model"])
-        self.llm = LanguageModel(self.model_name, max_tokens, int8, threads)
+        self.llm = LanguageModel(self.model_name, max_tokens, threads)
         self.load_seconds = round(time.perf_counter() - t0, 1)
 
     def settings(self):
         import torch
         n = torch.get_num_threads()
-        return (f"{self.model_name}, top {self.top_k} extracts, max {self.max_tokens} tokens"
-                f"{', int8' if self.int8 else ''}, {n} CPU thread{'' if n == 1 else 's'}")
+        return (f"{self.model_name}, top {self.top_k} extracts, max {self.max_tokens} tokens, "
+                f"{n} CPU thread{'' if n == 1 else 's'}")
 
     def answer(self, question):
         """Return a dict with the answer, its source and timing, ready for app.py."""
@@ -254,7 +251,7 @@ def run_tests(rag):
           f"slowest {max(times):.1f} s | reading {sum(reads) / len(reads):.1f} s on average, "
           f"writing {per_token:.2f} s per token | load {rag.load_seconds} s")
 
-    name = f"rag_test_{rag.model_name.split('/')[-1]}_k{rag.top_k}_t{rag.max_tokens}{'_int8' if rag.int8 else ''}.csv"
+    name = f"rag_test_{rag.model_name.split('/')[-1]}_k{rag.top_k}_t{rag.max_tokens}.csv"
     out = HERE / "data" / name
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as f:
@@ -275,12 +272,11 @@ def main():
     ap.add_argument("--test", action="store_true", help="run the test questions and save a CSV")
     ap.add_argument("--max-tokens", type=int, default=MAX_ANSWER_TOKENS, help="longest answer allowed")
     ap.add_argument("--top-k", type=int, default=TOP_K, help="number of extracts given to the model")
-    ap.add_argument("--int8", action="store_true", help="8-bit compressed weights: faster, less RAM")
     ap.add_argument("--threads", type=int, help="CPU threads for PyTorch")
     args = ap.parse_args()
 
     print("Loading...")
-    rag = RAG(args.model, args.top_k, args.max_tokens, args.int8, args.threads)
+    rag = RAG(args.model, args.top_k, args.max_tokens, args.threads)
     print(f"Ready: {rag.settings()} (loaded in {rag.load_seconds} s)")
 
     if args.test:

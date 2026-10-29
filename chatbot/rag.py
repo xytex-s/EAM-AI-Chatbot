@@ -129,7 +129,8 @@ class LanguageModel:
 def last_full_sentence(text):
     """If an answer was cut off at the token limit, drop the unfinished part at the end."""
     text = re.sub(r"(^|\n|\s)\d+\.\s*$", "", text)  # a dangling list number such as "7."
-    ends = [m.end() for m in re.finditer(r"[.!?](\s|$)", text)]
+    ends = [m.end() for m in re.finditer(r"[.!?](\s|$)", text)
+            if not re.search(r"(^|\s)\d+$", text[:m.start()])]   # "4." is a list number, not a sentence end
     if ends:
         return text[:ends[-1]].strip()
     cut = max(text.rfind(","), text.rfind(";"))       # one long unfinished sentence

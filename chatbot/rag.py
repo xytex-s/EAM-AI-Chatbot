@@ -14,7 +14,7 @@ Usage:
 
 Speed settings (try them with --test and compare the summary lines):
     --max-tokens 80     longest answer allowed; every extra word costs time
-    --top-k 2           fewer extracts = less for the model to read before answering
+    --top-k 3           more extracts = more to answer from, but slower to read (default 2)
     --threads 4         CPU threads PyTorch uses (default: PyTorch's own choice)
 
 The model can also be set with the MODEL_NAME environment variable (used on the VMs:
@@ -38,7 +38,9 @@ from build_index import DEFAULT_INDEX, TEST_QUESTIONS, load_index, load_model, s
 HERE = Path(__file__).parent
 DEFAULT_MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 MAX_ANSWER_TOKENS = 80       # about 2 sentences plus the source line; each extra token costs ~0.5 s on CPU
-TOP_K = 3                    # extracts given to the model; fewer = faster to read, but less to answer from
+TOP_K = 2                    # extracts given to the model: 2 was as accurate as 3 and faster to read (28 Oct test)
+MIN_SCORE = 0.2              # below this, the question is clearly unrelated to any page: skip the model.
+                             # Evidence (29 Oct): "hello" 0.155, "Premier League" 0.129; lowest correct match so far 0.293
 
 SYSTEM_PROMPT = """You are the Hallam Student Assistant. You answer questions from Sheffield Hallam University students.
 Use ONLY the numbered extracts from SHU web pages that you are given.
@@ -55,6 +57,13 @@ REMINDER = "Answer in at most 2 sentences using only the extracts, then write th
 # Fixed text, never written by the model.
 NOT_FOUND = ("Sorry, I couldn't find that in the SHU pages I have. Hallam Help can answer most "
              "questions: https://www.shu.ac.uk/myhallam/help-and-support")
+
+# Greetings and thanks get a fixed reply: no search result is relevant, so no source link.
+GREETING = re.compile(r"^\W*(hi|hiya|hello|hey|good (morning|afternoon|evening))\b\W*(there)?\W*$", re.I)
+THANKS = re.compile(r"^\W*(thanks?|thank you|cheers|ta)\b[\w\s]{0,15}\W*$", re.I)
+GREETING_REPLY = ("Hello! I'm the Hallam Student Assistant. Ask me about studying at Sheffield Hallam, "
+                  "for example IT, money, wellbeing, accommodation or exams.")
+THANKS_REPLY = "You're welcome! Ask me anything else about studying at Sheffield Hallam."
 
 # Small models sometimes say "I don't know" in their own words instead of NO_ANSWER.
 NOT_FOUND_PHRASES = re.compile(
@@ -152,7 +161,13 @@ class RAG:
     def answer(self, question):
         """Return a dict with the answer, its source and timing, ready for app.py."""
         t0 = time.perf_counter()
+        if GREETING.match(question):
+            return self._fixed(GREETING_REPLY, t0)
+        if THANKS.match(question):
+            return self._fixed(THANKS_REPLY, t0)
         results = search(self.index, self.embedder, question, k=self.top_k)
+        if results[0][0] < MIN_SCORE:                # nothing in the pages is about this question
+            return self._fixed(NOT_FOUND, t0, results[0][0])
         extracts = "\n\n".join(f"[{n}] {c['title']}\n{c['text']}" for n, (_, c) in enumerate(results, 1))
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -170,6 +185,13 @@ class RAG:
             "raw": raw,                          # what the model actually wrote, for testing
             **timing,                            # prompt/answer token counts, reading and writing time
         }
+
+    @staticmethod
+    def _fixed(text, t0, top_score=0.0):
+        """A reply written by the code, not the model: no source, no model time."""
+        return {"answer": text, "sources": [], "time_ms": round((time.perf_counter() - t0) * 1000),
+                "top_score": round(top_score, 3), "raw": "", "prompt_tokens": 0, "answer_tokens": 0,
+                "read_s": 0.0, "write_s": 0.0}
 
     @staticmethod
     def _parse(raw, results, question=""):
@@ -206,6 +228,7 @@ class RAG:
             n = 1
 
         text = re.sub(r"\s*\[\d+\]", "", text).strip()         # inline [1] markers; the page shows the source
+        text = text.lstrip("!?.,:;- ").strip()                   # stray punctuation at the start, e.g. "! This is..."
         q = question.strip().rstrip("?").lower()
         if q and text.lower().startswith(q):                     # model repeated the question first
             text = text[len(q):].lstrip(" ?.:-").strip()
@@ -221,6 +244,9 @@ def show(result):
     print(f"\n{result['answer']}")
     for s in result["sources"]:
         print(f"Source: {s['title']} - {s['url']}")
+    if not result["raw"]:                         # fixed reply from the code: the model wasn't used
+        print(f"({result['time_ms'] / 1000:.1f} s, answered without the model)\n")
+        return
     print(f"({result['time_ms'] / 1000:.1f} s: reading {result['read_s']} s, writing {result['write_s']} s "
           f"for {result['answer_tokens']} tokens; best match score {result['top_score']:.3f})\n")
 
@@ -252,7 +278,7 @@ def run_tests(rag):
           f"writing {per_token:.2f} s per token | load {rag.load_seconds} s")
 
     name = f"rag_test_{rag.model_name.split('/')[-1]}_k{rag.top_k}_t{rag.max_tokens}.csv"
-    out = HERE / "data" / name
+    out = Path(os.environ.get("RESULTS_DIR", HERE / "data")) / name   # RESULTS_DIR is set in Docker
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)

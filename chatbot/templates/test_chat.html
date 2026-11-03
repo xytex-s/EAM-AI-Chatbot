@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+  Bare test page for the chatbot API (Ethan). Not the real chat page - that's Ahmed's chat.html.
+  It shows how to read /ask/stream: status steps, then the answer typing out, then the source link.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatbot API test</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; color: #222; background: #fff; }
+  form { display: flex; gap: .5rem; }
+  input { flex: 1; padding: .6rem; font-size: 1rem; }
+  button { padding: .6rem 1rem; font-size: 1rem; }
+  .q { margin-top: 1.5rem; font-weight: 600; }
+  .steps { color: #666; font-size: .9rem; margin: .3rem 0; padding-left: 1.2rem; }
+  .steps li.now { color: #222; }
+  .a { white-space: pre-wrap; line-height: 1.5; }
+  .a.typing::after { content: "▍"; color: #888; }
+  .src, .meta { font-size: .9rem; margin-top: .3rem; }
+  .meta { color: #888; }
+  .err { color: #b00020; }
+</style>
+</head>
+<body>
+<h1>Chatbot API test</h1>
+<form id="f">
+  <input id="q" maxlength="500" placeholder="Ask about studying at SHU..." autocomplete="off" required>
+  <button id="go">Ask</button>
+</form>
+<label><input type="checkbox" id="stream" checked> Type the answer out (/ask/stream)</label>
+<div id="log"></div>
+
+<script>
+const $ = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+
+function showSources(box, data) {
+  for (const s of data.sources || []) {
+    const p = $("div", "src", "Source: "), a = $("a", null, s.title);
+    a.href = s.url; a.target = "_blank"; a.rel = "noopener";
+    p.append(a); box.append(p);
+  }
+  for (const pl of data.places || []) {
+    const p = $("div", "src"), a = $("a", null, `${pl.name} (${pl.type}, ${pl.distance_m} m)`);
+    a.href = pl.map_url; a.target = "_blank"; a.rel = "noopener";
+    p.append(a); box.append(p);
+  }
+  box.append($("div", "meta", `${(data.time_ms / 1000).toFixed(1)} s${data.safety ? " - safety message" : ""}`));
+}
+
+async function askStream(question, box, steps, answer) {
+  const res = await fetch("/ask/stream", { method: "POST", headers: { "Content-Type": "application/json" },
+                                           body: JSON.stringify({ question }) });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+  const reader = res.body.getReader(), decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();                         // the last line may not be complete yet
+    for (const l of lines.filter(Boolean)) {
+      const e = JSON.parse(l);
+      if (e.type === "status") {
+        steps.querySelector(".now")?.classList.remove("now");
+        steps.append($("li", "now", e.text));
+      } else if (e.type === "text") {
+        answer.textContent += e.text;            // textContent, never innerHTML
+      } else if (e.type === "done") {
+        answer.textContent = e.answer;           // the final, tidied answer replaces the preview
+        showSources(box, e);
+      } else if (e.type === "error") {
+        throw new Error(e.error);
+      }
+    }
+  }
+}
+
+async function askOnce(question, box, steps, answer) {
+  steps.append($("li", "now", "Waiting for the full answer"));
+  const res = await fetch("/ask", { method: "POST", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ question }) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  answer.textContent = data.answer;
+  showSources(box, data);
+}
+
+document.getElementById("f").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const input = document.getElementById("q"), go = document.getElementById("go");
+  const question = input.value.trim();
+  if (!question) return;
+  const box = $("div"), steps = $("ul", "steps"), answer = $("div", "a typing");
+  box.append($("div", "q", question), steps, answer);
+  document.getElementById("log").prepend(box);
+  input.value = ""; go.disabled = true;
+  try {
+    await (document.getElementById("stream").checked ? askStream : askOnce)(question, box, steps, answer);
+  } catch (err) {
+    box.append($("div", "err", err.message || "Something went wrong. Please try again."));
+  } finally {
+    answer.classList.remove("typing");
+    steps.querySelector(".now")?.classList.remove("now");
+    go.disabled = false; input.focus();
+  }
+});
+</script>
+</body>
+</html>

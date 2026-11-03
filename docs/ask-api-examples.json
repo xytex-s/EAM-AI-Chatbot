@@ -1,5 +1,5 @@
 {
-  "_about": "Draft /ask API contract for Group 7 chatbot (Ethan <-> Ahmed, agree by 24 Oct). Example data only: URLs, places and the wellbeing wording are placeholders, not real SHU content.",
+  "_about": "/ask API contract for the Group 7 chatbot (Ethan <-> Ahmed). /ask/stream, /health and the busy (503) reply added 3 Nov. Example data only: URLs, places and the wellbeing wording are placeholders.",
   "request": {
     "method": "POST",
     "path": "/ask",
@@ -30,7 +30,7 @@
     "not_in_pages": {
       "status": 200,
       "body": {
-        "answer": "I couldn't find that in the SHU pages I have. Try contacting Student Support directly.",
+        "answer": "Sorry, I couldn't find that in the SHU pages I have. Hallam Help can answer most questions: https://www.shu.ac.uk/myhallam/help-and-support",
         "sources": [],
         "places": [],
         "safety": false,
@@ -86,6 +86,13 @@
         "error": "Please enter a question (max 500 characters)."
       }
     },
+    "busy": {
+      "status": 503,
+      "body": {
+        "error": "The assistant is busy with other questions. Please try again in a minute."
+      },
+      "_note": "Only if a question waited over 2 minutes for the model (it answers one question at a time)."
+    },
     "rate_limited": {
       "status": 429,
       "body": "Returned by Nginx, not Flask - may be HTML, so the page should show a generic 'too many requests, try again shortly' message."
@@ -107,7 +114,7 @@
   "safety_and_places_functions": {
     "safety.py": "check(question: str) -> dict | None  (returns {'message': str, 'sources': [{'title', 'url'}]} if triggered, else None; each keyword group maps to its SHU topic page, always plus urgent help)",
     "places.py": "lookup(question: str) -> list[dict] | None  (returns places for local questions, else None)",
-    "note": "Proposed signatures - Ahmed to confirm. /ask calls safety first and returns immediately if it triggers.",
+    "note": "app.py calls safety.check() first and returns straight away if it triggers, then places.lookup(). Put safety.py and places.py in the chatbot/ folder next to app.py; until they are there, app.py runs without them.",
     "safety_topic_pages": {
       "always": "https://www.shu.ac.uk/wellbeing/urgent-help",
       "suicide / self-harm": "https://www.shu.ac.uk/wellbeing/self-help/topics/suicide",
@@ -120,5 +127,97 @@
       "termination": "https://www.shu.ac.uk/wellbeing/self-help/topics/pregnancy/termination",
       "reporting an incident": "https://www.shu.ac.uk/wellbeing/urgent-help/report"
     }
+  },
+  "streaming": {
+    "_about": "Optional second way to ask: the answer types out live, like ChatGPT. Same request body as /ask; the reply is NDJSON (one JSON object per line).",
+    "request": {
+      "method": "POST",
+      "path": "/ask/stream",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "question": "How do I get my SHUcard?"
+      }
+    },
+    "response_headers": {
+      "Content-Type": "application/x-ndjson",
+      "Cache-Control": "no-cache",
+      "X-Accel-Buffering": "no"
+    },
+    "example_lines": [
+      {
+        "type": "status",
+        "stage": "searching",
+        "text": "Searching SHU pages..."
+      },
+      {
+        "type": "status",
+        "stage": "reading",
+        "text": "Reading: Your SHUcard",
+        "pages": [
+          {
+            "title": "Your SHUcard",
+            "url": "https://www.shu.ac.uk/shucard"
+          }
+        ]
+      },
+      {
+        "type": "status",
+        "stage": "writing",
+        "text": "Writing the answer..."
+      },
+      {
+        "type": "text",
+        "text": "Collect your SHUcard from the Library help desk"
+      },
+      {
+        "type": "text",
+        "text": " with photo ID."
+      },
+      {
+        "type": "done",
+        "answer": "Collect your SHUcard from the Library help desk with photo ID.",
+        "sources": [
+          {
+            "title": "Your SHUcard",
+            "url": "https://www.shu.ac.uk/shucard"
+          }
+        ],
+        "places": [],
+        "safety": false,
+        "time_ms": 31200
+      }
+    ],
+    "event_types": {
+      "status": "a step to show greyed out ('Searching...', 'Reading: <page titles>', 'Writing...'). stage is one of waiting, searching, reading, writing. 'reading' also lists the pages being read.",
+      "text": "add this text to the end of the answer on screen (textContent += text).",
+      "done": "always the last line when it worked. Same fields as a /ask 200 response. Replace the typed-out text with done.answer (it is the tidied final version), then show sources/places.",
+      "error": "instead of done if something went wrong: {\"type\": \"error\", \"error\": \"...\"} - show the message."
+    },
+    "notes": [
+      "Safety, places, greetings and 'not found' replies skip the model, so they come back as a single done line.",
+      "Bad requests still get a normal 400 JSON response, not a stream.",
+      "Reading the stream in the browser: fetch() then response.body.getReader(), split on newlines and JSON.parse each line. templates/test_chat.html has a working example (askStream).",
+      "Nginx on VM 1 needs proxy_buffering off (or the X-Accel-Buffering header, which Flask already sends) and proxy_read_timeout 180s for this path.",
+      "If the student leaves the page, the model stops writing that answer."
+    ]
+  },
+  "health": {
+    "request": {
+      "method": "GET",
+      "path": "/health"
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "busy": false,
+        "safety": true,
+        "places": true,
+        "settings": "Qwen/Qwen2.5-1.5B-Instruct, top 2 extracts, max 80 tokens, 4 CPU threads"
+      }
+    },
+    "note": "For Waiyan's failover check. busy = the model is answering a question right now. safety/places = whether safety.py and places.py were found."
   }
 }

@@ -8,7 +8,7 @@ The language model runs locally on CPU with Hugging Face transformers (PyTorch).
 
 Usage:
     python rag.py "How do I get my SHUcard?"        # one question
-    python rag.py                                    # type questions until you enter a blank line
+    python rag.py                                    # type questions; answers are typed out as they're written
     python rag.py --test                             # run the test questions, save a CSV of results
     python rag.py --test --model Qwen/Qwen2.5-0.5B-Instruct
 
@@ -29,6 +29,7 @@ import argparse
 import csv
 import os
 import re
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -76,23 +77,21 @@ SOURCE_MARK = re.compile(r"(\*\*)?\b(the\s+)?sources?(\s+line)?(\*\*)?(\s*[:\-]|
 EXTRACT_TAIL = re.compile(r"\s*\(?[^.\n()]*\bextracts?\s*\[?\d+[^.\n]*\.?\s*$", re.I)
 ONLY_A_LABEL = re.compile(r"\W*(extract|source)?\s*\[?\d*\]?\W*", re.I)  # e.g. "[Extract 1]" and nothing else
 
+# While streaming, text is held back until it's safe to show (see RAG._visible):
+HOLD_START = 40     # characters to wait for before showing anything: "NO_ANSWER" / "I don't know" show up early
+HOLD_BACK = 12      # characters kept back at the end, in case "Source: 1" or "[1]" is still being written
+
 
 # ---------- The language model ----------
 
-class FirstTokenTimer:
-    """Notes when the first word of the answer appears, splitting the time into
-    'reading' (the model taking in the extracts) and 'writing' (the answer)."""
+class StopFlag:
+    """Lets the code stop the model early, e.g. if the student closes the page mid-answer."""
 
     def __init__(self):
-        self.calls, self.first_token_at = 0, None
+        self.event = threading.Event()
 
-    def put(self, value):                       # transformers calls this: first the prompt, then each new token
-        self.calls += 1
-        if self.calls == 2:
-            self.first_token_at = time.perf_counter()
-
-    def end(self):
-        pass
+    def __call__(self, input_ids, scores, **kwargs):  # transformers asks this after every token
+        return self.event.is_set()
 
 
 class LanguageModel:
@@ -110,20 +109,51 @@ class LanguageModel:
         # Not used: PyTorch dynamic int8 quantisation (quantize_dynamic) made Qwen2.5-1.5B 4-5x faster
         # at writing but its answers became nonsense in testing (28 Oct), so the model stays float32.
 
-    def generate(self, messages):
-        """Return (text, cut_off, timing) for one prompt."""
+    def stream(self, messages, info):
+        """Yield the answer piece by piece as the model writes it.
+
+        The model runs in a background thread and hands each new piece of text to a
+        TextIteratorStreamer, which this loop reads from. When it finishes, `info` is
+        filled with the token counts and timing ('reading' = before the first word,
+        'writing' = the rest) and whether the answer was cut off at the limit.
+        """
+        from transformers import StoppingCriteriaList, TextIteratorStreamer
         inputs = self.tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, return_tensors="pt", return_dict=True)
-        timer, t0 = FirstTokenTimer(), time.perf_counter()
-        with self.torch.inference_mode():
-            out = self.model.generate(**inputs, max_new_tokens=self.max_tokens, do_sample=False, streamer=timer)
+        streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True, timeout=300)
+        stop, result = StopFlag(), {}
+
+        def run():
+            try:
+                with self.torch.inference_mode():
+                    result["out"] = self.model.generate(
+                        **inputs, max_new_tokens=self.max_tokens, do_sample=False,
+                        streamer=streamer, stopping_criteria=StoppingCriteriaList([stop]))
+            except Exception as e:                 # pass the error to the reading loop
+                result["error"] = e
+                streamer.end()
+
+        t0 = time.perf_counter()
+        first = None
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        try:
+            for piece in streamer:
+                if piece and first is None:
+                    first = time.perf_counter()
+                yield piece
+        finally:                                   # also runs if the reader stops early
+            stop.event.set()
+            worker.join()
+        if "error" in result:
+            raise result["error"]
         t1 = time.perf_counter()
-        new_tokens = out[0][inputs["input_ids"].shape[1]:]
-        first = timer.first_token_at or t1
-        timing = {"prompt_tokens": int(inputs["input_ids"].shape[1]), "answer_tokens": len(new_tokens),
-                  "read_s": round(first - t0, 2), "write_s": round(t1 - first, 2)}
-        cut_off = len(new_tokens) >= self.max_tokens
-        return self.tokenizer.decode(new_tokens, skip_special_tokens=True).strip(), cut_off, timing
+        prompt_tokens = int(inputs["input_ids"].shape[1])
+        answer_tokens = int(result["out"].shape[1]) - prompt_tokens
+        first = first or t1
+        info.update(prompt_tokens=prompt_tokens, answer_tokens=answer_tokens,
+                    read_s=round(first - t0, 2), write_s=round(t1 - first, 2),
+                    cut_off=answer_tokens >= self.max_tokens)
 
 
 def last_full_sentence(text):
@@ -160,32 +190,83 @@ class RAG:
                 f"{n} CPU thread{'' if n == 1 else 's'}")
 
     def answer(self, question):
-        """Return a dict with the answer, its source and timing, ready for app.py."""
+        """Return a dict with the answer, its source and timing (the final 'done' event)."""
+        for event in self.answer_stream(question):
+            pass
+        event.pop("type")
+        return event
+
+    def answer_stream(self, question):
+        """Answer a question step by step, yielding events as dicts:
+
+            {"type": "status", "stage": "searching" | "reading" | "writing", "text": ..., ("pages": [...])}
+            {"type": "text", "text": "..."}        the next piece of the answer, safe to show
+            {"type": "done", "answer": ..., "sources": [...], "time_ms": ..., ...}   always last
+
+        The streamed text is a preview: the 'done' answer is the cleaned, final version
+        (source line removed, cut-off sentence trimmed, "don't know" replaced), so a
+        chat page should replace what it showed with done["answer"].
+        """
         t0 = time.perf_counter()
         if GREETING.match(question):
-            return self._fixed(GREETING_REPLY, t0)
+            yield {"type": "done", **self._fixed(GREETING_REPLY, t0)}
+            return
         if THANKS.match(question):
-            return self._fixed(THANKS_REPLY, t0)
+            yield {"type": "done", **self._fixed(THANKS_REPLY, t0)}
+            return
+
+        yield {"type": "status", "stage": "searching", "text": "Searching SHU pages..."}
         results = search(self.index, self.embedder, question, k=self.top_k)
         if results[0][0] < MIN_SCORE:                # nothing in the pages is about this question
-            return self._fixed(NOT_FOUND, t0, results[0][0])
+            yield {"type": "done", **self._fixed(NOT_FOUND, t0, results[0][0])}
+            return
+
+        pages = list({c["url"]: {"title": c["title"], "url": c["url"]} for _, c in results}.values())
+        yield {"type": "status", "stage": "reading",
+               "text": "Reading: " + ", ".join(p["title"] for p in pages), "pages": pages}
+
         extracts = "\n\n".join(f"[{n}] {c['title']}\n{c['text']}" for n, (_, c) in enumerate(results, 1))
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Extracts:\n\n{extracts}\n\nQuestion: {question}\n\n{REMINDER}"},
         ]
-        raw, cut_off, timing = self.llm.generate(messages)
+        raw, shown, info = "", "", {}
+        for piece in self.llm.stream(messages, info):
+            if not piece:
+                continue
+            if not raw:
+                yield {"type": "status", "stage": "writing", "text": "Writing the answer..."}
+            raw += piece
+            visible = self._visible(raw)
+            if len(visible) > len(shown) and visible.startswith(shown):
+                yield {"type": "text", "text": visible[len(shown):]}
+                shown = visible
+
+        raw = raw.strip()
         text, source = self._parse(raw, results, question)
-        if cut_off and source:
+        if info.get("cut_off") and source:
             text = last_full_sentence(text)
-        return {
+        yield {
+            "type": "done",
             "answer": text,
             "sources": [{"title": source["title"], "url": source["url"]}] if source else [],
             "time_ms": round((time.perf_counter() - t0) * 1000),
             "top_score": results[0][0],          # logged for analysis, not used as a cut-off
             "raw": raw,                          # what the model actually wrote, for testing
-            **timing,                            # prompt/answer token counts, reading and writing time
+            "prompt_tokens": info.get("prompt_tokens", 0), "answer_tokens": info.get("answer_tokens", 0),
+            "read_s": info.get("read_s", 0.0), "write_s": info.get("write_s", 0.0),
         }
+
+    @staticmethod
+    def _visible(raw):
+        """The part of the answer so far that is safe to show while it's still being written."""
+        if len(raw) < HOLD_START or NOT_FOUND_PHRASES.search(raw):
+            return ""                            # may still turn into NO_ANSWER / "I don't know"
+        mark = SOURCE_MARK.search(raw)
+        text = raw[:mark.start()] if mark else raw[:-HOLD_BACK]
+        text = re.sub(r"\s*\[\d+\]", "", text)     # inline [1] markers
+        text = re.sub(r"\s*\[\d*$", "", text)       # a marker that is only half written
+        return text.lstrip("!?.,:;- \n").rstrip()   # rstrip: the next piece may start with "." not " "
 
     @staticmethod
     def _fixed(text, t0, top_score=0.0):
@@ -242,7 +323,8 @@ class RAG:
 # ---------- Command line ----------
 
 def show(result):
-    print(f"\n{result['answer']}")
+    if result["answer"] is not None:                # None: already typed out by show_stream()
+        print(f"\n{result['answer']}")
     for s in result["sources"]:
         print(f"Source: {s['title']} - {s['url']}")
     if not result["raw"]:                         # fixed reply from the code: the model wasn't used
@@ -250,6 +332,27 @@ def show(result):
         return
     print(f"({result['time_ms'] / 1000:.1f} s: reading {result['read_s']} s, writing {result['write_s']} s "
           f"for {result['answer_tokens']} tokens; best match score {result['top_score']:.3f})\n")
+
+
+def show_stream(events):
+    """Print status steps, then type the answer out as it's written."""
+    shown = ""
+    for e in events:
+        if e["type"] == "status":
+            print(f"  ... {e['text']}", flush=True)
+        elif e["type"] == "text":
+            if not shown:
+                print()
+            print(e["text"], end="", flush=True)
+            shown += e["text"]
+        elif e["type"] == "done":
+            if shown and e["answer"].strip() != shown.strip():
+                print("\n\n[Tidied final answer]")      # e.g. a cut-off sentence was trimmed
+                shown = ""
+            if not shown:
+                print(f"\n{e['answer']}", end="")
+            print()
+            show({**e, "answer": None})
 
 
 def run_tests(rag):
@@ -312,7 +415,7 @@ def main():
         show(rag.answer(args.question))
     else:
         while (q := input("Ask a question (blank to quit): ").strip()):
-            show(rag.answer(q))
+            show_stream(rag.answer_stream(q))
 
 
 if __name__ == "__main__":

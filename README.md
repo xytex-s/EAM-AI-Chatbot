@@ -6,7 +6,7 @@ A proof-of-concept chatbot that answers SHU student-support questions from SHU's
 
 1. `paging/collect_pages.py` saves and chunks about 150 SHU pages.
 2. `build_index.py` makes the chunks searchable.
-3. For each question, `/ask` runs the safety check, then searches for the best extracts and has the model write a short answer with a source link.
+3. `chatbot/app.py` (Flask) answers each question: the safety check first, then search for the best extracts, then the model writes a short answer with a source link. `/ask/stream` types the answer out as it's written.
 
 Crisis and safeguarding questions skip the AI and get a fixed SHU message with links.
 
@@ -15,7 +15,7 @@ Crisis and safeguarding questions skip the AI and get a fixed SHU message with l
 | Part | Owner | Status |
 | --- | --- | --- |
 | Page collection | Ethan | Done: 144 pages, 273 chunks |
-| Index, RAG, Flask `/ask` | Ethan | In progress, first answer due 28 Oct |
+| Index, RAG, Flask `/ask` | Ethan | Done; first answers recorded 29 Oct, streaming added 3 Nov |
 | Chat page, safety, places | Ahmed | In progress |
 | VMs, Nginx, failover | Waiyan | In progress |
 | Testing and meetings | Junaid | Testing w/c 18 Nov |
@@ -24,3 +24,4 @@ Crisis and safeguarding questions skip the AI and get a fixed SHU message with l
 
 - Tech reference doc: architecture, API and VM sizing
 - `ask-api-examples.json`: the `/ask` request and response format
+- `paging/README.md`: how page collection works

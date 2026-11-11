@@ -63,22 +63,35 @@
     "safety_triggered": {
       "status": 200,
       "body": {
-        "answer": "[Fixed wellbeing message - wording to be copied from the SHU wellbeing page, Ahmed to confirm]",
+        "answer": "It sounds like you're going through something really difficult, and you don't have to deal with it alone. If you're in danger or have hurt yourself, call 999 now. For urgent mental health help, call NHS 111 and choose option 2 (24 hours). You can talk to Samaritans for free, any time, on 116 123, or text STEEL to 85258 (Shout, 24 hours). Sheffield Hallam's wellbeing team can support you too - see the links below.",
         "sources": [
           {
-            "title": "Urgent help",
+            "title": "Urgent help (Sheffield Hallam)",
             "url": "https://www.shu.ac.uk/wellbeing/urgent-help"
           },
           {
-            "title": "Eating disorders",
-            "url": "https://www.shu.ac.uk/wellbeing/self-help/topics/eating-disorders"
+            "title": "Suicide (Sheffield Hallam self-help)",
+            "url": "https://www.shu.ac.uk/wellbeing/self-help/topics/suicide"
+          },
+          {
+            "title": "Register for wellbeing support (Sheffield Hallam)",
+            "url": "https://www.shu.ac.uk/wellbeing/register-for-support"
+          },
+          {
+            "title": "NHS 111",
+            "url": "https://111.nhs.uk/"
+          },
+          {
+            "title": "Samaritans",
+            "url": "https://www.samaritans.org/how-we-can-help/contact-samaritan/"
           }
         ],
         "places": [],
         "safety": true,
         "time_ms": 5
       },
-      "_example_question": "a message mentioning an eating disorder (illustrative)"
+      "_example_question": "a message mentioning self-harm (illustrative)",
+      "_note": "Suggested wording, 11 Nov. Numbers checked on 11 Nov against the services' own pages: 999; NHS 111 option 2 for urgent mental health help, 24/7; Samaritans 116 123, free, 24/7; Shout: text STEEL to 85258, 24/7 (as listed on SHU's urgent help page). Ahmed's safety.py decides the final wording."
     },
     "bad_request": {
       "status": 400,
@@ -125,7 +138,15 @@
       "arranged or forced marriage": "https://www.shu.ac.uk/wellbeing/self-help/topics/arranged-or-forced-marriage",
       "miscarriage": "https://www.shu.ac.uk/wellbeing/self-help/topics/pregnancy/miscarriage",
       "termination": "https://www.shu.ac.uk/wellbeing/self-help/topics/pregnancy/termination",
-      "reporting an incident": "https://www.shu.ac.uk/wellbeing/urgent-help/report"
+      "reporting an incident": "https://www.shu.ac.uk/wellbeing/urgent-help/report",
+      "register for support (non-urgent)": "https://www.shu.ac.uk/wellbeing/register-for-support"
+    },
+    "safety_external_links": {
+      "_note": "Added to every safety reply after the SHU links. Checked 11 Nov.",
+      "NHS 111 (urgent mental health: call 111, option 2, 24/7)": "https://111.nhs.uk/",
+      "Samaritans (116 123, free, 24/7)": "https://www.samaritans.org/how-we-can-help/contact-samaritan/",
+      "_optional: National Suicide Prevention Helpline UK (0800 689 5652, 6pm-midnight daily - NOT 116 123, which is Samaritans)": "https://www.spuk.org.uk/national-suicide-prevention-helpline-uk/",
+      "_not recommended: YoungMinds (for children, young people and parents; no crisis line on its home page)": "https://www.youngminds.org.uk/"
     }
   },
   "streaming": {

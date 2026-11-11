@@ -38,10 +38,18 @@ from pathlib import Path
 
 import requests
 
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Free public Overpass servers, tried in order. The main one is often overloaded
+# (11 Nov: timeouts and "502 Bad Gateway"), so two others are tried if it fails.
+# List: https://wiki.openstreetmap.org/wiki/Overpass_API (checked 11 Nov 2026)
+OVERPASS_URLS = [
+    "https://overpass-api.de/api/interpreter",            # main instance (FOSSGIS)
+    "https://overpass.private.coffee/api/interpreter",    # Private.coffee: free, no rate limit
+    "https://ovp.dresel.systems/api/interpreter",         # Europe only (fine for Sheffield), free
+]
 # Overpass asks every app to identify itself
 USER_AGENT = "SHU-EAM-Group7-Chatbot-PoC/1.0 (student project, Sheffield Hallam University)"
-TIMEOUT_S = 10                  # give up on Overpass after 10 seconds
+TIMEOUT_S = 10                  # per server while a student waits; --warm allows WARM_TIMEOUT_S
+WARM_TIMEOUT_S = 40
 RADIUS_M = 800                  # about a 10-minute walk
 MAX_RESULTS = 8
 CACHE_MAX_AGE_S = 7 * 24 * 3600
@@ -129,20 +137,27 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> int:
     return round(2 * r * math.asin(math.sqrt(a)))
 
 
-def build_query(lat: float, lon: float, kinds: set[str]) -> str:
+def build_query(lat: float, lon: float, kinds: set[str], timeout: int = TIMEOUT_S) -> str:
     """Overpass QL: every cafe/restaurant/shop (as asked) within RADIUS_M of the campus."""
     tags = sorted({tag for kind in kinds for tag in KIND_TAGS[kind]})
     parts = "".join(f'nwr["{k}"="{v}"](around:{RADIUS_M},{lat},{lon});' for k, v in tags)
     # "out center tags" gives a centre point for buildings (ways) as well as nodes
-    return f"[out:json][timeout:{TIMEOUT_S}];({parts});out center tags;"
+    return f"[out:json][timeout:{timeout}];({parts});out center tags;"
 
 
-def _post_overpass(query: str) -> dict:
-    """Send the query to Overpass. Raises requests.RequestException on failure."""
-    res = requests.post(OVERPASS_URL, data={"data": query},
-                        headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT_S)
-    res.raise_for_status()
-    return res.json()
+def _post_overpass(query: str, timeout: int = TIMEOUT_S) -> dict:
+    """Send the query to each Overpass server in turn until one answers.
+    Raises requests.RequestException if they all fail."""
+    last_error = None
+    for url in OVERPASS_URLS:
+        try:
+            res = requests.post(url, data={"data": query},
+                                headers={"User-Agent": USER_AGENT}, timeout=timeout)
+            res.raise_for_status()
+            return res.json()
+        except (requests.RequestException, ValueError) as err:     # timeout, 429/502/504, or not JSON
+            last_error = err
+    raise requests.RequestException(f"all Overpass servers failed (last: {last_error})")
 
 
 def parse_elements(data: dict, lat: float, lon: float, kinds: set[str]) -> list[dict]:
@@ -175,9 +190,9 @@ def parse_elements(data: dict, lat: float, lon: float, kinds: set[str]) -> list[
     return places[:MAX_RESULTS]
 
 
-def fetch_places(campus: str, kinds: set[str]) -> list[dict]:
+def fetch_places(campus: str, kinds: set[str], timeout: int = TIMEOUT_S) -> list[dict]:
     lat, lon = CAMPUSES[campus]
-    return parse_elements(_post_overpass(build_query(lat, lon, kinds)), lat, lon, kinds)
+    return parse_elements(_post_overpass(build_query(lat, lon, kinds, timeout), timeout), lat, lon, kinds)
 
 
 # ---------- Cache ----------
@@ -255,7 +270,7 @@ def warm_cache() -> None:
     for campus in CAMPUSES:
         for kinds in ({"food"}, {"cafe"}, {"shop"}):
             try:
-                places = fetch_places(campus, kinds)
+                places = fetch_places(campus, kinds, timeout=WARM_TIMEOUT_S)
                 _write_cache(_cache_key(campus, kinds), places)
                 print(f"OK   {campus:20} {'+'.join(sorted(kinds)):6} {len(places)} places")
             except (requests.RequestException, ValueError, KeyError) as err:

@@ -69,7 +69,10 @@ KIND_WORDS = {
     "cafe": ["coffee", "cafe", "cafes", "coffee shop", "coffee shops"],
     "food": ["food", "eat", "eating", "lunch", "breakfast", "brunch", "dinner",
              "restaurant", "restaurants", "takeaway", "takeaways", "snack", "snacks",
-             "sandwich", "sandwiches", "meal", "meals", "places to eat"],
+             "sandwich", "sandwiches", "meal", "meals", "places to eat",
+             # Specific foods (11 Nov): these still list all places to eat nearby, not only that food
+             "pizza", "pizzas", "burger", "burgers", "kebab", "kebabs", "chips", "chippy",
+             "curry", "noodles", "sushi", "chicken", "bakery"],
     "shop": ["shop", "shops", "supermarket", "supermarkets", "grocery", "groceries",
              "convenience store", "corner shop"],
 }

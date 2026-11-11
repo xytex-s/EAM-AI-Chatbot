@@ -83,7 +83,11 @@ def answer_without_model(question, t0):
     if places:
         found = places.lookup(question)
         if found is not None:
-            return reply(PLACES_ANSWER if found else NO_PLACES, found_places=found, t0=t0)
+            if hasattr(places, "summary"):          # Ahmed's wording, e.g. "Here are cafés within ..."
+                text = places.summary(question, found)
+            else:
+                text = PLACES_ANSWER if found else NO_PLACES
+            return reply(text, found_places=found, t0=t0)
     return None
 
 

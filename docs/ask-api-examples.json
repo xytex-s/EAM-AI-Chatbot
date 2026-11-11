@@ -127,7 +127,7 @@
   "safety_and_places_functions": {
     "safety.py": "check(question: str) -> dict | None  (returns {'message': str, 'sources': [{'title', 'url'}]} if triggered, else None; each keyword group maps to its SHU topic page, always plus urgent help)",
     "places.py": "lookup(question: str) -> list[dict] | None  (returns places for local questions, else None)",
-    "note": "app.py calls safety.check() first and returns straight away if it triggers, then places.lookup(). Put safety.py and places.py in the chatbot/ folder next to app.py; until they are there, app.py runs without them.",
+    "note": "app.py calls safety.check() first and returns straight away if it triggers, then places.lookup(). safety.py was written on 11 Nov to this format (chatbot/safety.py); places.py goes next to app.py when ready, and until then app.py runs without it.",
     "safety_topic_pages": {
       "always": "https://www.shu.ac.uk/wellbeing/urgent-help",
       "suicide / self-harm": "https://www.shu.ac.uk/wellbeing/self-help/topics/suicide",

@@ -16,7 +16,7 @@ Crisis and safeguarding questions skip the AI and get a fixed SHU message with l
 | --- | --- | --- |
 | Page collection | Ethan | Done: 144 pages, 273 chunks |
 | Index, RAG, Flask `/ask` | Ethan | Done; first answers recorded 29 Oct, streaming added 3 Nov |
-| Chat page, safety, places | Ahmed | In progress |
+| Chat page, safety, places | Ahmed | Done |
 | VMs, Nginx, failover | Waiyan | In progress |
 | Testing and meetings | Junaid | Testing w/c 18 Nov |
 

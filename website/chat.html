@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Support Assistant (Prototype)</title>
+  <meta name="description" content="Group 7 student project prototype. Not an official university service.">
+  <!--
+    Chat page (Ahmed). Plain HTML: no Jinja tags, so either Flask
+    (render_template) or Nginx (as a static file) can serve it.
+    Paths start with "/" so they work at the site root over HTTPS.
+    The bot name appears 3 times: <title>, the top bar and the greeting.
+  -->
+  <script src="/static/theme.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#question">Skip to the question box</a>
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-name">Student Support Assistant</span>
+      <span class="badge">Prototype</span>
+    </div>
+    <nav class="topnav" aria-label="Page">
+      <button type="button" class="top-link" data-open="how-dialog">How it works</button>
+      <button type="button" class="top-link" data-open="privacy-dialog">Privacy</button>
+      <button type="button" class="icon-btn" id="theme-toggle" aria-pressed="false" title="Dark mode">
+        <!-- moon icon; aria-hidden because the button has its own label -->
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <span class="visually-hidden">Dark mode</span>
+      </button>
+      <button type="button" class="top-btn" id="new-chat">New chat</button>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <!-- Left sidebar (desktop only) -->
+    <aside class="sidebar" aria-label="Topics and help">
+      <h2 class="side-heading">Browse topics</h2>
+      <ul class="topic-list" id="topic-list"><!-- filled by app.js --></ul>
+
+      <section class="info-box">
+        <h2>About these answers</h2>
+        <p>Answers come only from university web pages, and each one links to the page it used. Your chat isn't saved once you close the tab.</p>
+      </section>
+
+      <!-- [CHECK] Copied from shu.ac.uk/myhallam/help-in-an-emergency and
+           shu.ac.uk/wellbeing/urgent-help on 11 Nov 2026. Re-check before the demo. -->
+      <section class="info-box urgent">
+        <h2>Need to talk to someone now?</h2>
+        <p>In an emergency, call <a href="tel:999">999</a>.</p>
+        <p>Campus Security, 24 hours: <a href="tel:01142252000">0114 225 2000</a></p>
+        <p>Samaritans, 24 hours: <a href="tel:116123">116 123</a></p>
+      </section>
+    </aside>
+
+    <!-- Chat area -->
+    <main class="chat" id="main">
+      <!-- role="log" + aria-live: screen readers announce each new message -->
+      <div class="messages" id="messages" role="log" aria-live="polite" aria-label="Conversation"></div>
+
+      <form class="composer" id="composer" novalidate>
+        <label for="question" class="visually-hidden">Ask a question</label>
+        <div class="input-row">
+          <textarea id="question" name="question" rows="2" maxlength="500"
+                    placeholder="Ask a question" autocomplete="off"
+                    aria-describedby="input-help counter"></textarea>
+          <button type="submit" class="send-btn" id="send">Send</button>
+        </div>
+        <p class="input-hint" id="input-hint" role="status"></p>
+        <div class="composer-meta">
+          <span id="input-help">Answers can be wrong. Check the linked page before acting on one.</span>
+          <span class="counter" id="counter">0 / 500</span>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <span class="footer-long">Group 7 student project prototype. Not an official university service.</span>
+    <span class="footer-short">Student project prototype. Answers can be wrong.</span>
+  </footer>
+
+  <!-- Welcome block: copied into the chat on load and on "New chat" -->
+  <template id="welcome-template">
+    <div class="welcome" id="welcome">
+      <div class="msg bot">
+        <div class="bubble">
+          <p class="text">Hi, I'm the Student Support Assistant. Ask me about accommodation, fees, the library, IT, wellbeing, enrolment or finding your way around campus.</p>
+        </div>
+      </div>
+
+      <!-- Mobile home screen (hidden on desktop, where the sidebar shows topics) -->
+      <div class="mobile-home">
+        <h2>What do you need help with?</h2>
+        <p>Pick a topic or ask in your own words.</p>
+        <div class="topic-grid" data-topic-grid></div>
+        <!-- [CHECK] same numbers as the sidebar -->
+        <p class="mobile-urgent">Need to talk to someone now? In an emergency call <a href="tel:999">999</a>. Samaritans, 24 hours: <a href="tel:116123">116 123</a>.</p>
+      </div>
+
+      <div class="try-asking">
+        <h2>Try asking</h2>
+        <div class="chips">
+          <button type="button" class="chip" data-question="When is the library open at weekends?">When is the library open at weekends?</button>
+          <button type="button" class="chip" data-question="How do I pay my tuition fees?">How do I pay my tuition fees?</button>
+          <button type="button" class="chip" data-question="Where can I print on campus?">Where can I print on campus?</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- "How it works" panel -->
+  <dialog id="how-dialog" aria-labelledby="how-title">
+    <h2 id="how-title">How it works</h2>
+    <ol>
+      <!-- [CHECK with Ethan] final page count -->
+      <li>You ask a question.</li>
+      <li>The assistant searches a saved copy of about 140 public shu.ac.uk pages for the parts that best match it.</li>
+      <li>A small AI language model, running on the project's own servers, writes a short answer using only those parts. The answer links to the pages it came from.</li>
+      <li>Questions about food, coffee or shops near campus use OpenStreetMap instead.</li>
+      <li>If a message suggests someone may be at risk, the AI is skipped. You see a fixed message written by people, with the university's own support links and phone numbers.</li>
+    </ol>
+    <form method="dialog"><button class="dialog-close">Close</button></form>
+  </dialog>
+
+  <!-- Privacy notice (A07). Every line must be TRUE.
+       If anonymous logging is switched on during testing, add a line saying so. -->
+  <dialog id="privacy-dialog" aria-labelledby="privacy-title">
+    <h2 id="privacy-title">Privacy</h2>
+    <ul>
+      <li>Please don't enter personal details, such as your name, student number, address or details about your health.</li>
+      <li>We don't store your chat history. The conversation is kept only in this browser tab, and is gone when you close it or press "New chat".</li>
+      <!-- [CHECK with Ethan] true only while the model runs on our own VMs, not a hosted API -->
+      <li>Your questions are answered on the project's own servers. They aren't sent to an outside AI company.</li>
+      <li>For questions about places nearby, only the campus location and the type of place (for example "café") are sent to OpenStreetMap, never your question.</li>
+      <li>The only thing this page remembers on your device is whether you chose light or dark mode.</li>
+      <li>This is a student proof of concept built for an assessed university module. It is not an official Sheffield Hallam University service.</li>
+      <li>Answers can be wrong. Always check the linked page before acting on an answer.</li>
+      <!-- [CHECK] against shu.ac.uk/myhallam/help-in-an-emergency -->
+      <li>For urgent help, call 999 in an emergency, or Campus Security on 0114 225 2000 (24 hours). You can also see the university's
+        <a href="https://www.shu.ac.uk/wellbeing/urgent-help" target="_blank" rel="noopener">urgent help page<span class="visually-hidden"> (opens in a new tab)</span></a>.</li>
+    </ul>
+    <form method="dialog"><button class="dialog-close">Close</button></form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
